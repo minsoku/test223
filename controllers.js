@@ -224,12 +224,22 @@ function handleUI() {
     const enterVRButton = document.getElementById('enter-vr');
     const ui = document.getElementById('ui');
 
-    enterVRButton.addEventListener('click', async () => {
-        console.log('VR 버튼이 클릭되었습니다.');
+    enterVRButton.addEventListener('click', async (event) => {
+        console.log('🎯 VR 버튼이 클릭되었습니다!');
+        console.log('클릭 이벤트:', event);
+        
+        // 이벤트 전파 방지
+        event.preventDefault();
+        event.stopPropagation();
         
         // 로딩 표시
         enterVRButton.textContent = '연결 중...';
         enterVRButton.disabled = true;
+        
+        // 추가 상태 확인
+        console.log('현재 navigator.xr 상태:', !!navigator.xr);
+        console.log('현재 renderer.xr 상태:', !!renderer.xr);
+        console.log('현재 VR 세션 상태:', renderer.xr.isPresenting);
         
         try {
             // WebXR 지원 확인
@@ -247,25 +257,67 @@ function handleUI() {
             
             console.log('VR 세션이 지원됩니다. 세션을 요청합니다...');
             
+            // VR 디바이스 감지 확인
+            console.log('🔍 VR 디바이스 감지 중...');
+            
+            // 사용자 제스처 확인
+            if (!event.isTrusted) {
+                console.warn('⚠️ 사용자 제스처가 아닙니다.');
+            }
+            
+            // 추가 권한 확인
+            try {
+                const permissions = await navigator.permissions.query({name: 'xr-spatial-tracking'});
+                console.log('XR 권한 상태:', permissions.state);
+            } catch (permError) {
+                console.log('XR 권한 확인 불가:', permError.message);
+            }
+            
             // 여러 옵션으로 VR 세션 시도
             let session = null;
             
-            // 첫 번째 시도: local-floor 기능 요구
+            // 1차 시도: local-floor 기능 포함
             try {
+                console.log('🔄 1차 시도: local-floor 기능으로 VR 세션 요청...');
                 session = await navigator.xr.requestSession('immersive-vr', {
                     requiredFeatures: ['local-floor']
                 });
-                console.log('local-floor 기능으로 VR 세션 시작');
+                console.log('✅ local-floor 기능으로 VR 세션 성공!');
             } catch (e) {
-                console.log('local-floor 기능 실패, 기본 옵션으로 재시도:', e.message);
+                console.log('❌ local-floor 기능 실패:', e.message);
+                console.log('오류 상세:', e);
                 
-                // 두 번째 시도: 최소 요구사항만
+                // 2차 시도: 기본 옵션만
                 try {
+                    console.log('🔄 2차 시도: 기본 옵션으로 VR 세션 요청...');
                     session = await navigator.xr.requestSession('immersive-vr');
-                    console.log('기본 옵션으로 VR 세션 시작');
+                    console.log('✅ 기본 옵션으로 VR 세션 성공!');
                 } catch (e2) {
-                    console.log('기본 옵션도 실패:', e2.message);
-                    throw new Error('VR 세션을 시작할 수 없습니다: ' + e2.message);
+                    console.log('❌ 기본 옵션도 실패:', e2.message);
+                    console.log('오류 상세:', e2);
+                    
+                    // 3차 시도: 다른 옵션들
+                    try {
+                        console.log('🔄 3차 시도: 최소 옵션으로 VR 세션 요청...');
+                        session = await navigator.xr.requestSession('immersive-vr', {
+                            optionalFeatures: ['local-floor', 'bounded-floor']
+                        });
+                        console.log('✅ 최소 옵션으로 VR 세션 성공!');
+                    } catch (e3) {
+                        console.log('❌ 모든 시도 실패:', e3.message);
+                        console.log('오류 상세:', e3);
+                        
+                        // 상세한 오류 정보 제공
+                        if (e3.name === 'NotSupportedError') {
+                            throw new Error('VR 헤드셋이 감지되지 않습니다. 헤드셋이 켜져있고 브라우저와 연결되어 있는지 확인하세요.');
+                        } else if (e3.name === 'NotAllowedError') {
+                            throw new Error('VR 접근이 거부되었습니다. 브라우저에서 VR 권한을 허용해주세요.');
+                        } else if (e3.name === 'SecurityError') {
+                            throw new Error('보안 오류입니다. HTTPS 연결을 확인하세요.');
+                        } else {
+                            throw new Error('VR 세션을 시작할 수 없습니다: ' + e3.message);
+                        }
+                    }
                 }
             }
             
@@ -425,7 +477,7 @@ async function checkWebXRSupport() {
             console.log('✅ VR 세션이 지원됩니다!');
             enterVRButton.textContent = 'VR 모드 시작';
             enterVRButton.disabled = false;
-            if (vrDeviceStatus) vrDeviceStatus.textContent = '✅ VR 헤드셋 연결됨';
+            if (vrDeviceStatus) vrDeviceStatus.textContent = '✅ VR 헤드셋 결됨';
             
             // 추가 디버깅 정보
             console.log('브라우저:', navigator.userAgent);

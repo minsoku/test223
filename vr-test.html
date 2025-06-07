@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VR 연결 테스트</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #f0f0f0;
+      }
+      .test-section {
+        background: white;
+        padding: 20px;
+        margin: 10px 0;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .status {
+        padding: 10px;
+        border-radius: 4px;
+        margin: 10px 0;
+      }
+      .success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+      .warning {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+      }
+      .info {
+        background: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+      }
+      button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      button:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+      }
+      #log {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 15px;
+        font-family: monospace;
+        font-size: 12px;
+        max-height: 300px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🕹️ VR 연결 테스트 도구</h1>
+
+    <div class="test-section">
+      <h2>1. 기본 환경 확인</h2>
+      <div id="basic-checks"></div>
+    </div>
+
+    <div class="test-section">
+      <h2>2. WebXR 지원 확인</h2>
+      <div id="webxr-checks"></div>
+      <button onclick="checkWebXR()">WebXR 다시 확인</button>
+    </div>
+
+    <div class="test-section">
+      <h2>3. VR 헤드셋 연결 테스트</h2>
+      <div id="vr-device-checks"></div>
+      <button onclick="testVRConnection()">VR 연결 테스트</button>
+    </div>
+
+    <div class="test-section">
+      <h2>4. 상세 로그</h2>
+      <button onclick="clearLog()">로그 지우기</button>
+      <div id="log"></div>
+    </div>
+
+    <script>
+      let logElement = document.getElementById("log");
+
+      function log(message, type = "info") {
+        const timestamp = new Date().toLocaleTimeString();
+        const logMessage = `[${timestamp}] ${message}\n`;
+        logElement.textContent += logMessage;
+        logElement.scrollTop = logElement.scrollHeight;
+        console.log(message);
+      }
+
+      function clearLog() {
+        logElement.textContent = "";
+      }
+
+      function showStatus(elementId, message, type) {
+        const element = document.getElementById(elementId);
+        const statusDiv = document.createElement("div");
+        statusDiv.className = `status ${type}`;
+        statusDiv.textContent = message;
+        element.appendChild(statusDiv);
+      }
+
+      // 기본 환경 확인
+      function checkBasicEnvironment() {
+        const checks = document.getElementById("basic-checks");
+        checks.innerHTML = "";
+
+        // HTTPS 확인
+        const isHTTPS =
+          window.location.protocol === "https:" ||
+          window.location.hostname === "localhost";
+        showStatus(
+          "basic-checks",
+          `프로토콜: ${window.location.protocol} ${
+            isHTTPS ? "✅" : "❌ (HTTPS 필요)"
+          }`,
+          isHTTPS ? "success" : "error"
+        );
+
+        // 브라우저 확인
+        const userAgent = navigator.userAgent;
+        let browserName = "Unknown";
+        if (userAgent.includes("Chrome") && !userAgent.includes("Edg"))
+          browserName = "Chrome";
+        else if (userAgent.includes("Edg")) browserName = "Edge";
+        else if (userAgent.includes("Firefox")) browserName = "Firefox";
+
+        const supportedBrowser = ["Chrome", "Edge"].includes(browserName);
+        showStatus(
+          "basic-checks",
+          `브라우저: ${browserName} ${
+            supportedBrowser ? "✅" : "⚠️ (Chrome/Edge 권장)"
+          }`,
+          supportedBrowser ? "success" : "warning"
+        );
+
+        log(
+          `기본 환경 확인 완료 - HTTPS: ${isHTTPS}, 브라우저: ${browserName}`
+        );
+      }
+
+      // WebXR 지원 확인
+      async function checkWebXR() {
+        const checks = document.getElementById("webxr-checks");
+        checks.innerHTML = "";
+
+        log("WebXR 지원 상태 확인 시작...");
+
+        // navigator.xr 확인
+        if (!navigator.xr) {
+          showStatus("webxr-checks", "❌ navigator.xr이 없습니다", "error");
+          log("❌ navigator.xr API가 사용 불가능");
+          return false;
+        }
+
+        showStatus("webxr-checks", "✅ navigator.xr 사용 가능", "success");
+        log("✅ navigator.xr API 사용 가능");
+
+        try {
+          // VR 세션 지원 확인
+          const isSupported = await navigator.xr.isSessionSupported(
+            "immersive-vr"
+          );
+          if (isSupported) {
+            showStatus("webxr-checks", "✅ VR 세션 지원됨", "success");
+            log("✅ immersive-vr 세션 지원됨");
+            return true;
+          } else {
+            showStatus("webxr-checks", "❌ VR 세션 미지원", "error");
+            log("❌ immersive-vr 세션 미지원");
+            return false;
+          }
+        } catch (error) {
+          showStatus(
+            "webxr-checks",
+            `❌ WebXR 확인 오류: ${error.message}`,
+            "error"
+          );
+          log(`❌ WebXR 확인 중 오류: ${error.message}`);
+          return false;
+        }
+      }
+
+      // VR 연결 테스트
+      async function testVRConnection() {
+        const checks = document.getElementById("vr-device-checks");
+        checks.innerHTML = "";
+
+        log("VR 헤드셋 연결 테스트 시작...");
+
+        if (!navigator.xr) {
+          showStatus("vr-device-checks", "❌ WebXR 미지원", "error");
+          return;
+        }
+
+        try {
+          log("🔄 VR 세션 요청 시도...");
+          showStatus(
+            "vr-device-checks",
+            "🔄 VR 헤드셋 연결 시도 중...",
+            "info"
+          );
+
+          // 실제 VR 세션 요청
+          const session = await navigator.xr.requestSession("immersive-vr");
+
+          log("✅ VR 세션 성공적으로 생성됨!");
+          showStatus("vr-device-checks", "✅ VR 헤드셋 연결 성공!", "success");
+
+          // 세션 정보 표시
+          log(`세션 정보 - inputSources: ${session.inputSources.length}개`);
+
+          // 세션 종료
+          await session.end();
+          log("VR 세션 종료됨");
+          showStatus(
+            "vr-device-checks",
+            "✅ 테스트 완료 - VR 헤드셋이 정상적으로 연결되어 있습니다!",
+            "success"
+          );
+        } catch (error) {
+          log(`❌ VR 연결 실패: ${error.name} - ${error.message}`);
+
+          let errorMessage = "VR 연결 실패: ";
+          let suggestion = "";
+
+          if (error.name === "NotSupportedError") {
+            errorMessage += "VR 헤드셋이 감지되지 않습니다";
+            suggestion =
+              "💡 해결책: Meta Quest를 켜고 USB/무선으로 PC와 연결하세요";
+          } else if (error.name === "NotAllowedError") {
+            errorMessage += "VR 접근이 거부되었습니다";
+            suggestion = "💡 해결책: 브라우저에서 VR 권한을 허용하세요";
+          } else if (error.name === "SecurityError") {
+            errorMessage += "보안 오류";
+            suggestion = "💡 해결책: HTTPS 연결을 확인하세요";
+          } else {
+            errorMessage += error.message;
+            suggestion =
+              "💡 해결책: 헤드셋을 다시 연결하고 브라우저를 새로고침하세요";
+          }
+
+          showStatus("vr-device-checks", `❌ ${errorMessage}`, "error");
+          if (suggestion) {
+            showStatus("vr-device-checks", suggestion, "warning");
+          }
+        }
+      }
+
+      // 페이지 로드 시 자동 실행
+      window.onload = function () {
+        checkBasicEnvironment();
+        setTimeout(checkWebXR, 500);
+      };
+    </script>
+  </body>
+</html>
