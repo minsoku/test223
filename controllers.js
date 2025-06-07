@@ -225,8 +225,7 @@ function handleUI() {
     const ui = document.getElementById('ui');
 
     enterVRButton.addEventListener('click', async (event) => {
-        console.log('🎯 VR 버튼이 클릭되었습니다!');
-        console.log('클릭 이벤트:', event);
+        logToScreen('🎯 VR 버튼이 클릭되었습니다!', 'info');
         
         // 이벤트 전파 방지
         event.preventDefault();
@@ -237,9 +236,9 @@ function handleUI() {
         enterVRButton.disabled = true;
         
         // 추가 상태 확인
-        console.log('현재 navigator.xr 상태:', !!navigator.xr);
-        console.log('현재 renderer.xr 상태:', !!renderer.xr);
-        console.log('현재 VR 세션 상태:', renderer.xr.isPresenting);
+        logToScreen(`🔧 navigator.xr 상태: ${!!navigator.xr}`, 'info');
+        logToScreen(`🔧 renderer.xr 상태: ${!!renderer.xr}`, 'info');
+        logToScreen(`🔧 현재 VR 세션: ${renderer.xr.isPresenting}`, 'info');
         
         try {
             // WebXR 지원 확인
@@ -255,22 +254,22 @@ function handleUI() {
                 throw new Error('이 디바이스는 VR 세션을 지원하지 않습니다.');
             }
             
-            console.log('VR 세션이 지원됩니다. 세션을 요청합니다...');
+            logToScreen('🚀 VR 세션이 지원됩니다. 세션을 요청합니다...', 'success');
             
             // VR 디바이스 감지 확인
-            console.log('🔍 VR 디바이스 감지 중...');
+            logToScreen('🔍 VR 디바이스 감지 중...', 'info');
             
             // 사용자 제스처 확인
             if (!event.isTrusted) {
-                console.warn('⚠️ 사용자 제스처가 아닙니다.');
+                logToScreen('⚠️ 사용자 제스처가 아닙니다.', 'warning');
             }
             
             // 추가 권한 확인
             try {
                 const permissions = await navigator.permissions.query({name: 'xr-spatial-tracking'});
-                console.log('XR 권한 상태:', permissions.state);
+                logToScreen(`🔐 XR 권한 상태: ${permissions.state}`, 'info');
             } catch (permError) {
-                console.log('XR 권한 확인 불가:', permError.message);
+                logToScreen(`🔐 XR 권한 확인 불가: ${permError.message}`, 'warning');
             }
             
             // 여러 옵션으로 VR 세션 시도
@@ -278,34 +277,34 @@ function handleUI() {
             
             // 1차 시도: local-floor 기능 포함
             try {
-                console.log('🔄 1차 시도: local-floor 기능으로 VR 세션 요청...');
+                logToScreen('🔄 1차 시도: local-floor 기능으로 VR 세션 요청...', 'info');
                 session = await navigator.xr.requestSession('immersive-vr', {
                     requiredFeatures: ['local-floor']
                 });
-                console.log('✅ local-floor 기능으로 VR 세션 성공!');
+                logToScreen('✅ local-floor 기능으로 VR 세션 성공!', 'success');
             } catch (e) {
-                console.log('❌ local-floor 기능 실패:', e.message);
-                console.log('오류 상세:', e);
+                logToScreen(`❌ local-floor 기능 실패: ${e.message}`, 'error');
+                logToScreen(`📋 오류 유형: ${e.name}`, 'warning');
                 
                 // 2차 시도: 기본 옵션만
                 try {
-                    console.log('🔄 2차 시도: 기본 옵션으로 VR 세션 요청...');
+                    logToScreen('🔄 2차 시도: 기본 옵션으로 VR 세션 요청...', 'info');
                     session = await navigator.xr.requestSession('immersive-vr');
-                    console.log('✅ 기본 옵션으로 VR 세션 성공!');
+                    logToScreen('✅ 기본 옵션으로 VR 세션 성공!', 'success');
                 } catch (e2) {
-                    console.log('❌ 기본 옵션도 실패:', e2.message);
-                    console.log('오류 상세:', e2);
+                    logToScreen(`❌ 기본 옵션도 실패: ${e2.message}`, 'error');
+                    logToScreen(`📋 오류 유형: ${e2.name}`, 'warning');
                     
                     // 3차 시도: 다른 옵션들
                     try {
-                        console.log('🔄 3차 시도: 최소 옵션으로 VR 세션 요청...');
+                        logToScreen('🔄 3차 시도: 최소 옵션으로 VR 세션 요청...', 'info');
                         session = await navigator.xr.requestSession('immersive-vr', {
                             optionalFeatures: ['local-floor', 'bounded-floor']
                         });
-                        console.log('✅ 최소 옵션으로 VR 세션 성공!');
+                        logToScreen('✅ 최소 옵션으로 VR 세션 성공!', 'success');
                     } catch (e3) {
-                        console.log('❌ 모든 시도 실패:', e3.message);
-                        console.log('오류 상세:', e3);
+                        logToScreen(`❌ 모든 시도 실패: ${e3.message}`, 'error');
+                        logToScreen(`📋 최종 오류 유형: ${e3.name}`, 'error');
                         
                         // 상세한 오류 정보 제공
                         if (e3.name === 'NotSupportedError') {
@@ -322,22 +321,23 @@ function handleUI() {
             }
             
             if (session) {
-                console.log('VR 세션이 성공적으로 생성되었습니다.');
+                logToScreen('🎉 VR 세션이 성공적으로 생성되었습니다!', 'success');
                 
                 // 렌더러에 세션 설정
                 await renderer.xr.setSession(session);
-                console.log('렌더러에 VR 세션이 설정되었습니다.');
+                logToScreen('🔧 렌더러에 VR 세션이 설정되었습니다.', 'success');
                 
                 // UI 숨기기
                 ui.classList.add('hidden');
                 document.body.classList.add('vr-mode');
                 
-                console.log('VR 모드가 시작되었습니다!');
+                logToScreen('🚀 VR 모드가 시작되었습니다!', 'success');
                 showMessage('VR 모드가 시작되었습니다! 컨트롤러를 사용해 게임을 즐기세요!');
             }
             
         } catch (error) {
-            console.error('VR 세션 시작 오류:', error);
+            logToScreen(`💥 VR 세션 시작 오류: ${error.message}`, 'error');
+            logToScreen(`📋 오류 유형: ${error.name}`, 'error');
             
             // 구체적인 오류 메시지 제공
             let errorMessage = 'VR 모드를 시작할 수 없습니다. ';
@@ -364,7 +364,7 @@ function handleUI() {
 
     // VR 세션 종료 시 UI 다시 표시
     renderer.xr.addEventListener('sessionend', () => {
-        console.log('VR 세션이 종료되었습니다.');
+        logToScreen('👋 VR 세션이 종료되었습니다.', 'info');
         ui.classList.remove('hidden');
         document.body.classList.remove('vr-mode');
         enterVRButton.textContent = 'VR 모드 시작';
@@ -419,6 +419,42 @@ function updateControllerRaycasting(controller) {
     }
 }
 
+// 화면 로그 함수
+function logToScreen(message, type = 'info') {
+    const logContent = document.getElementById('log-content');
+    if (!logContent) return;
+    
+    const timestamp = new Date().toLocaleTimeString();
+    const logEntry = document.createElement('div');
+    logEntry.className = `log-entry log-${type}`;
+    
+    logEntry.innerHTML = `
+        <span class="log-time">[${timestamp}]</span> ${message}
+    `;
+    
+    logContent.appendChild(logEntry);
+    logContent.scrollTop = logContent.scrollHeight;
+    
+    // 최대 50개 로그만 유지
+    while (logContent.children.length > 50) {
+        logContent.removeChild(logContent.firstChild);
+    }
+    
+    // 콘솔에도 출력 (가능한 경우)
+    console.log(`[${timestamp}] ${message}`);
+}
+
+// 로그 지우기 함수
+function clearLiveLog() {
+    const logContent = document.getElementById('log-content');
+    if (logContent) {
+        logContent.innerHTML = '';
+    }
+}
+
+// 전역 함수로 만들기 (HTML에서 호출 가능)
+window.clearLiveLog = clearLiveLog;
+
 // 디버그 정보 업데이트
 function updateDebugInfo() {
     // 브라우저 정보 업데이트
@@ -451,14 +487,14 @@ async function checkWebXRSupport() {
     const webxrStatus = document.getElementById('webxr-status');
     const vrDeviceStatus = document.getElementById('vr-device-status');
     
-    console.log('WebXR 지원 상태를 확인합니다...');
+    logToScreen('🔍 WebXR 지원 상태를 확인합니다...', 'info');
     
     // 디버그 정보 업데이트
     updateDebugInfo();
     
     // 기본 WebXR API 확인
     if (!navigator.xr) {
-        console.log('❌ navigator.xr이 없습니다.');
+        logToScreen('❌ navigator.xr이 없습니다.', 'error');
         enterVRButton.textContent = 'WebXR 미지원';
         enterVRButton.disabled = true;
         if (webxrStatus) webxrStatus.textContent = '❌ 미지원';
@@ -466,7 +502,7 @@ async function checkWebXRSupport() {
         return;
     }
     
-    console.log('✅ navigator.xr이 사용 가능합니다.');
+    logToScreen('✅ navigator.xr이 사용 가능합니다.', 'success');
     if (webxrStatus) webxrStatus.textContent = '✅ 사용 가능';
     
     try {
@@ -474,22 +510,24 @@ async function checkWebXRSupport() {
         const isSupported = await navigator.xr.isSessionSupported('immersive-vr');
         
         if (isSupported) {
-            console.log('✅ VR 세션이 지원됩니다!');
+            logToScreen('✅ VR 세션이 지원됩니다!', 'success');
             enterVRButton.textContent = 'VR 모드 시작';
             enterVRButton.disabled = false;
-            if (vrDeviceStatus) vrDeviceStatus.textContent = '✅ VR 헤드셋 결됨';
+            if (vrDeviceStatus) vrDeviceStatus.textContent = '✅ VR 헤드셋 연결됨';
             
             // 추가 디버깅 정보
-            console.log('브라우저:', navigator.userAgent);
-            console.log('현재 프로토콜:', window.location.protocol);
+            const browserName = navigator.userAgent.includes('Chrome') ? 'Chrome' : 
+                               navigator.userAgent.includes('Edge') ? 'Edge' : 'Other';
+            logToScreen(`📱 브라우저: ${browserName}`, 'info');
+            logToScreen(`🔒 프로토콜: ${window.location.protocol}`, 'info');
             
             if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
-                console.warn('⚠️ HTTPS가 아닙니다. WebXR은 HTTPS에서만 작동합니다.');
+                logToScreen('⚠️ HTTPS가 아닙니다. WebXR은 HTTPS에서만 작동합니다.', 'warning');
                 showMessage('⚠️ HTTPS 연결이 필요합니다. localhost에서 테스트하거나 HTTPS 서버를 사용하세요.');
             }
             
         } else {
-            console.log('❌ VR 세션이 지원되지 않습니다.');
+            logToScreen('❌ VR 세션이 지원되지 않습니다.', 'error');
             enterVRButton.textContent = 'VR 헤드셋 필요';
             enterVRButton.disabled = true;
             if (vrDeviceStatus) vrDeviceStatus.textContent = '❌ VR 헤드셋 없음';
@@ -497,7 +535,7 @@ async function checkWebXRSupport() {
         }
         
     } catch (error) {
-        console.error('❌ VR 지원 확인 중 오류:', error);
+        logToScreen(`❌ VR 지원 확인 중 오류: ${error.message}`, 'error');
         enterVRButton.textContent = 'VR 확인 실패';
         enterVRButton.disabled = true;
         if (vrDeviceStatus) vrDeviceStatus.textContent = '❌ 확인 실패: ' + error.message;

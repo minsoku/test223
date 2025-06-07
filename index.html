@@ -23,8 +23,8 @@
       </div>
       <div id="loading">로딩 중...</div>
       <div id="debug-info">
-        <details>
-          <summary>🔧 디버그 정보 (클릭하여 열기)</summary>
+        <details open>
+          <summary>🔧 디버그 정보</summary>
           <div id="debug-content">
             <p>
               <strong>WebXR 상태:</strong>
@@ -44,6 +44,11 @@
             </p>
           </div>
         </details>
+      </div>
+      <div id="live-log">
+        <h4>🔍 실시간 상태</h4>
+        <div id="log-content"></div>
+        <button onclick="clearLiveLog()">로그 지우기</button>
       </div>
     </div>
 
