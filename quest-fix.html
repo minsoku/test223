@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quest 컨트롤러 수정</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #1a1a2e;
+        color: white;
+      }
+      .container {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        padding: 30px;
+      }
+      h1 {
+        text-align: center;
+        color: #4ecdc4;
+      }
+      .status {
+        padding: 15px;
+        border-radius: 8px;
+        margin: 10px 0;
+      }
+      .success {
+        background: #4caf50;
+      }
+      .error {
+        background: #f44336;
+      }
+      .warning {
+        background: #ff9800;
+      }
+      .info {
+        background: #2196f3;
+      }
+      button {
+        background: #4ecdc4;
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 25px;
+        cursor: pointer;
+        margin: 10px 5px;
+        font-size: 16px;
+        width: 100%;
+      }
+      button:hover {
+        background: #45b7b8;
+      }
+      #log {
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 8px;
+        padding: 15px;
+        font-family: monospace;
+        font-size: 14px;
+        max-height: 300px;
+        overflow-y: auto;
+        margin-top: 20px;
+      }
+      .controller-display {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin: 20px 0;
+      }
+      .controller {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 15px;
+        border-radius: 10px;
+        border: 2px solid #666;
+      }
+      .controller.active {
+        border-color: #4caf50;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🔧 Quest 컨트롤러 수정</h1>
+
+      <div class="status info">
+        <strong>문제:</strong> Quest 기본 화면에서는 컨트롤러가 작동하지만
+        브라우저에서는 입력이 0으로 나옴
+      </div>
+
+      <button onclick="fixMethod1()">🔧 방법 1: Quest 설정 가이드</button>
+      <button onclick="fixMethod2()">🔧 방법 2: 브라우저 권한 수정</button>
+      <button onclick="fixMethod3()">🔧 방법 3: 강화된 컨트롤러 감지</button>
+      <button onclick="testFixed()">✅ 수정 테스트</button>
+
+      <div class="controller-display">
+        <div id="left-controller" class="controller">
+          <h3>👈 왼쪽</h3>
+          <div id="left-status">대기 중</div>
+        </div>
+        <div id="right-controller" class="controller">
+          <h3>👉 오른쪽</h3>
+          <div id="right-status">대기 중</div>
+        </div>
+      </div>
+
+      <div id="log"></div>
+    </div>
+
+    <script>
+      function log(message) {
+        const logElement = document.getElementById("log");
+        const timestamp = new Date().toLocaleTimeString();
+        logElement.innerHTML += `[${timestamp}] ${message}<br>`;
+        logElement.scrollTop = logElement.scrollHeight;
+      }
+
+      function fixMethod1() {
+        log("🔧 방법 1: Quest 설정 가이드");
+        log("");
+        log("다음 단계를 따라해주세요:");
+        log("1. Quest에서 설정 → 시스템 → 개발자");
+        log('2. "USB 연결 대화상자" 활성화');
+        log("3. 설정 → 개인정보 보호");
+        log('4. "앱이 손 추적 데이터에 액세스하도록 허용" 체크');
+        log("5. Quest 재시작");
+        log("");
+        log('완료 후 "수정 테스트" 버튼을 눌러주세요');
+      }
+
+      function fixMethod2() {
+        log("🔧 방법 2: 브라우저 권한 수정");
+        log("");
+        log("Quest 브라우저에서:");
+        log("1. 새 탭에서 chrome://settings/content/sensors 입력");
+        log('2. "사이트에서 모션 센서에 액세스하도록 허용" 활성화');
+        log("3. 이 페이지로 돌아와서 새로고침");
+        log("");
+        log("또는:");
+        log("1. 주소표시줄 왼쪽 자물쇠 아이콘 클릭");
+        log('2. "모션 및 광센서" 허용으로 설정');
+        log("");
+        log('완료 후 "수정 테스트" 버튼을 눌러주세요');
+      }
+
+      async function fixMethod3() {
+        log("🔧 방법 3: 강화된 컨트롤러 감지 시작...");
+
+        try {
+          // 권한 요청
+          if ("permissions" in navigator) {
+            try {
+              await navigator.permissions.query({
+                name: "xr-spatial-tracking",
+              });
+              log("✅ XR 권한 확인됨");
+            } catch (e) {
+              log("⚠️ XR 권한 확인 불가");
+            }
+          }
+
+          // 강화된 VR 세션 생성
+          log("VR 세션 생성 중...");
+          const session = await navigator.xr.requestSession("immersive-vr", {
+            optionalFeatures: ["local-floor", "bounded-floor", "hand-tracking"],
+          });
+
+          log("✅ VR 세션 생성 성공");
+
+          // 지연된 컨트롤러 감지
+          setTimeout(() => {
+            checkControllersEnhanced(session);
+          }, 2000);
+
+          // 입력 소스 변경 이벤트
+          session.addEventListener("inputsourceschange", () => {
+            log("📡 입력 소스 변경됨");
+            checkControllersEnhanced(session);
+          });
+        } catch (error) {
+          log(`❌ 방법 3 실패: ${error.message}`);
+        }
+      }
+
+      function checkControllersEnhanced(session) {
+        const inputSources = session.inputSources;
+        log(`🔍 입력 소스: ${inputSources.length}개`);
+
+        // UI 초기화
+        document.getElementById("left-controller").className = "controller";
+        document.getElementById("right-controller").className = "controller";
+        document.getElementById("left-status").textContent = "연결 안됨";
+        document.getElementById("right-status").textContent = "연결 안됨";
+
+        inputSources.forEach((source, index) => {
+          const hand = source.handedness;
+          log(`입력 ${index}: ${hand} 손, 게임패드: ${!!source.gamepad}`);
+
+          if (hand === "left" || hand === "right") {
+            document.getElementById(`${hand}-controller`).className =
+              "controller active";
+            document.getElementById(`${hand}-status`).textContent = "✅ 연결됨";
+
+            if (source.gamepad) {
+              monitorGamepad(source.gamepad, hand);
+            }
+          }
+        });
+      }
+
+      function monitorGamepad(gamepad, hand) {
+        log(`🎮 ${hand} 컨트롤러 게임패드 모니터링 시작`);
+
+        const checkInputs = () => {
+          gamepad.buttons.forEach((button, index) => {
+            if (button.pressed && button.value > 0) {
+              log(`🎯 ${hand} 버튼 ${index}: ${button.value.toFixed(3)}`);
+            }
+          });
+
+          if (gamepad.axes.length >= 2) {
+            const x = gamepad.axes[0];
+            const y = gamepad.axes[1];
+            if (Math.abs(x) > 0.1 || Math.abs(y) > 0.1) {
+              log(`🕹️ ${hand} 스틱: X=${x.toFixed(2)}, Y=${y.toFixed(2)}`);
+            }
+          }
+
+          requestAnimationFrame(checkInputs);
+        };
+
+        checkInputs();
+      }
+
+      async function testFixed() {
+        log("✅ 수정 테스트 시작...");
+
+        try {
+          if (!navigator.xr) {
+            throw new Error("WebXR 미지원");
+          }
+
+          const session = await navigator.xr.requestSession("immersive-vr");
+          log("✅ VR 세션 생성 성공");
+
+          // 2초 후 컨트롤러 확인
+          setTimeout(() => {
+            const inputSources = session.inputSources;
+            log(`🔍 컨트롤러 개수: ${inputSources.length}`);
+
+            if (inputSources.length > 0) {
+              log("🎉 컨트롤러 감지됨! 이제 게임을 시도해보세요!");
+
+              inputSources.forEach((source) => {
+                if (source.gamepad) {
+                  log(`✅ ${source.handedness} 컨트롤러 게임패드 사용 가능`);
+                }
+              });
+            } else {
+              log("❌ 아직 컨트롤러가 감지되지 않습니다");
+              log("💡 컨트롤러를 흔들거나 버튼을 눌러보세요");
+            }
+          }, 2000);
+        } catch (error) {
+          log(`❌ 테스트 실패: ${error.message}`);
+        }
+      }
+
+      window.onload = function () {
+        log("🔧 Quest 컨트롤러 수정 도구 시작");
+        log("💡 위의 방법들을 순서대로 시도해보세요");
+      };
+    </script>
+  </body>
+</html>
