@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VR 방탈출 게임</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="ui">
+      <div id="info">
+        <h1>VR 방탈출 게임</h1>
+        <p>메타퀘스트3 헤드셋을 착용하고 VR 모드를 시작하세요!</p>
+        <button id="enter-vr">VR 모드 시작</button>
+        <div id="instructions">
+          <h3>조작법:</h3>
+          <ul>
+            <li>컨트롤러의 트리거로 오브젝트 선택</li>
+            <li>컨트롤러를 이용해 오브젝트 조작</li>
+            <li>열쇠를 찾아 문을 열고 탈출하세요!</li>
+          </ul>
+        </div>
+      </div>
+      <div id="loading">로딩 중...</div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <!-- Three.js 라이브러리 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- WebXR Polyfill -->
+    <script src="https://cdn.jsdelivr.net/npm/webxr-polyfill@latest/build/webxr-polyfill.js"></script>
+    <!-- VR Button -->
+    <script src="https://threejs.org/examples/js/webxr/VRButton.js"></script>
+    <!-- XR Controller -->
+    <script src="https://threejs.org/examples/js/webxr/XRControllerModelFactory.js"></script>
+
+    <script src="game.js"></script>
+    <script src="controllers.js"></script>
+  </body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "name": "vr-escape-room",
+  "version": "1.0.0",
+  "description": "WebXR을 사용한 VR 방탈출 게임",
+  "main": "index.html",
+  "scripts": {
+    "start": "http-server -p 8000 -o",
+    "dev": "http-server -p 8000 -o --cors",
+    "https": "http-server -p 8000 -S -C cert.pem -K key.pem -o"
+  },
+  "keywords": [
+    "webxr",
+    "vr",
+    "escape-room",
+    "threejs",
+    "meta-quest"
+  ],
+  "author": "VR Game Developer",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
