@@ -225,28 +225,98 @@ function handleUI() {
     const ui = document.getElementById('ui');
 
     enterVRButton.addEventListener('click', async () => {
+        console.log('VR 버튼이 클릭되었습니다.');
+        
+        // 로딩 표시
+        enterVRButton.textContent = '연결 중...';
+        enterVRButton.disabled = true;
+        
         try {
-            if (navigator.xr) {
-                const session = await navigator.xr.requestSession('immersive-vr', {
+            // WebXR 지원 확인
+            if (!navigator.xr) {
+                throw new Error('이 브라우저는 WebXR을 지원하지 않습니다.');
+            }
+            
+            console.log('WebXR API가 사용 가능합니다.');
+            
+            // VR 세션 지원 확인
+            const isSupported = await navigator.xr.isSessionSupported('immersive-vr');
+            if (!isSupported) {
+                throw new Error('이 디바이스는 VR 세션을 지원하지 않습니다.');
+            }
+            
+            console.log('VR 세션이 지원됩니다. 세션을 요청합니다...');
+            
+            // 여러 옵션으로 VR 세션 시도
+            let session = null;
+            
+            // 첫 번째 시도: local-floor 기능 요구
+            try {
+                session = await navigator.xr.requestSession('immersive-vr', {
                     requiredFeatures: ['local-floor']
                 });
+                console.log('local-floor 기능으로 VR 세션 시작');
+            } catch (e) {
+                console.log('local-floor 기능 실패, 기본 옵션으로 재시도:', e.message);
                 
+                // 두 번째 시도: 최소 요구사항만
+                try {
+                    session = await navigator.xr.requestSession('immersive-vr');
+                    console.log('기본 옵션으로 VR 세션 시작');
+                } catch (e2) {
+                    console.log('기본 옵션도 실패:', e2.message);
+                    throw new Error('VR 세션을 시작할 수 없습니다: ' + e2.message);
+                }
+            }
+            
+            if (session) {
+                console.log('VR 세션이 성공적으로 생성되었습니다.');
+                
+                // 렌더러에 세션 설정
                 await renderer.xr.setSession(session);
+                console.log('렌더러에 VR 세션이 설정되었습니다.');
+                
+                // UI 숨기기
                 ui.classList.add('hidden');
                 document.body.classList.add('vr-mode');
-            } else {
-                throw new Error('WebXR not supported');
+                
+                console.log('VR 모드가 시작되었습니다!');
+                showMessage('VR 모드가 시작되었습니다! 컨트롤러를 사용해 게임을 즐기세요!');
             }
+            
         } catch (error) {
-            console.error('VR 세션을 시작할 수 없습니다:', error);
-            showMessage('VR 헤드셋이 연결되어 있는지 확인해주세요.');
+            console.error('VR 세션 시작 오류:', error);
+            
+            // 구체적인 오류 메시지 제공
+            let errorMessage = 'VR 모드를 시작할 수 없습니다. ';
+            
+            if (error.message.includes('not supported')) {
+                errorMessage += '브라우저나 디바이스가 WebXR을 지원하지 않습니다.';
+            } else if (error.message.includes('NotSupportedError')) {
+                errorMessage += 'VR 헤드셋이 연결되어 있는지 확인하세요.';
+            } else if (error.message.includes('SecurityError')) {
+                errorMessage += 'HTTPS 연결이 필요합니다.';
+            } else if (error.message.includes('NotAllowedError')) {
+                errorMessage += 'VR 권한이 거부되었습니다.';
+            } else {
+                errorMessage += error.message;
+            }
+            
+            showMessage(errorMessage);
+            
+            // 버튼 상태 복원
+            enterVRButton.textContent = 'VR 모드 시작';
+            enterVRButton.disabled = false;
         }
     });
 
     // VR 세션 종료 시 UI 다시 표시
     renderer.xr.addEventListener('sessionend', () => {
+        console.log('VR 세션이 종료되었습니다.');
         ui.classList.remove('hidden');
         document.body.classList.remove('vr-mode');
+        enterVRButton.textContent = 'VR 모드 시작';
+        enterVRButton.disabled = false;
     });
 }
 
@@ -297,19 +367,94 @@ function updateControllerRaycasting(controller) {
     }
 }
 
-// WebXR 지원 확인
-if (navigator.xr) {
-    navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
-        if (supported) {
-            console.log('WebXR VR이 지원됩니다!');
+// 디버그 정보 업데이트
+function updateDebugInfo() {
+    // 브라우저 정보 업데이트
+    const browserInfo = document.getElementById('browser-info');
+    if (browserInfo) {
+        const isChrome = navigator.userAgent.includes('Chrome');
+        const isEdge = navigator.userAgent.includes('Edg');
+        const isFirefox = navigator.userAgent.includes('Firefox');
+        
+        let browserName = 'Unknown';
+        if (isChrome && !isEdge) browserName = 'Chrome';
+        else if (isEdge) browserName = 'Edge';
+        else if (isFirefox) browserName = 'Firefox';
+        
+        browserInfo.textContent = browserName;
+    }
+    
+    // 프로토콜 정보 업데이트
+    const protocolInfo = document.getElementById('protocol-info');
+    if (protocolInfo) {
+        const protocol = window.location.protocol;
+        const isSecure = protocol === 'https:' || window.location.hostname === 'localhost';
+        protocolInfo.textContent = protocol + (isSecure ? ' ✅' : ' ❌ (HTTPS 필요)');
+    }
+}
+
+// WebXR 지원 확인 및 초기화
+async function checkWebXRSupport() {
+    const enterVRButton = document.getElementById('enter-vr');
+    const webxrStatus = document.getElementById('webxr-status');
+    const vrDeviceStatus = document.getElementById('vr-device-status');
+    
+    console.log('WebXR 지원 상태를 확인합니다...');
+    
+    // 디버그 정보 업데이트
+    updateDebugInfo();
+    
+    // 기본 WebXR API 확인
+    if (!navigator.xr) {
+        console.log('❌ navigator.xr이 없습니다.');
+        enterVRButton.textContent = 'WebXR 미지원';
+        enterVRButton.disabled = true;
+        if (webxrStatus) webxrStatus.textContent = '❌ 미지원';
+        if (vrDeviceStatus) vrDeviceStatus.textContent = '❌ WebXR 없음';
+        return;
+    }
+    
+    console.log('✅ navigator.xr이 사용 가능합니다.');
+    if (webxrStatus) webxrStatus.textContent = '✅ 사용 가능';
+    
+    try {
+        // VR 세션 지원 확인
+        const isSupported = await navigator.xr.isSessionSupported('immersive-vr');
+        
+        if (isSupported) {
+            console.log('✅ VR 세션이 지원됩니다!');
+            enterVRButton.textContent = 'VR 모드 시작';
+            enterVRButton.disabled = false;
+            if (vrDeviceStatus) vrDeviceStatus.textContent = '✅ VR 헤드셋 연결됨';
+            
+            // 추가 디버깅 정보
+            console.log('브라우저:', navigator.userAgent);
+            console.log('현재 프로토콜:', window.location.protocol);
+            
+            if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+                console.warn('⚠️ HTTPS가 아닙니다. WebXR은 HTTPS에서만 작동합니다.');
+                showMessage('⚠️ HTTPS 연결이 필요합니다. localhost에서 테스트하거나 HTTPS 서버를 사용하세요.');
+            }
+            
         } else {
-            console.log('WebXR VR이 지원되지 않습니다.');
-            document.getElementById('enter-vr').textContent = 'VR 미지원';
-            document.getElementById('enter-vr').disabled = true;
+            console.log('❌ VR 세션이 지원되지 않습니다.');
+            enterVRButton.textContent = 'VR 헤드셋 필요';
+            enterVRButton.disabled = true;
+            if (vrDeviceStatus) vrDeviceStatus.textContent = '❌ VR 헤드셋 없음';
+            showMessage('VR 헤드셋이 연결되어 있는지 확인하고 페이지를 새로고침하세요.');
         }
-    });
-} else {
-    console.log('WebXR이 지원되지 않습니다.');
-    document.getElementById('enter-vr').textContent = 'WebXR 미지원';
-    document.getElementById('enter-vr').disabled = true;
-} 
+        
+    } catch (error) {
+        console.error('❌ VR 지원 확인 중 오류:', error);
+        enterVRButton.textContent = 'VR 확인 실패';
+        enterVRButton.disabled = true;
+        if (vrDeviceStatus) vrDeviceStatus.textContent = '❌ 확인 실패: ' + error.message;
+        showMessage('VR 지원 확인 중 오류가 발생했습니다: ' + error.message);
+    }
+}
+
+// 페이지 로드 시 WebXR 지원 확인
+document.addEventListener('DOMContentLoaded', () => {
+    // 약간의 지연 후 확인 (DOM이 완전히 로드되도록)
+    setTimeout(checkWebXRSupport, 1000);
+}); 

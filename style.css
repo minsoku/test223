@@ -130,4 +130,49 @@ body {
 
 #game-status.show {
     display: block;
+}
+
+/* 디버그 정보 스타일 */
+#debug-info {
+    margin-top: 2rem;
+    text-align: left;
+}
+
+#debug-info details {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#debug-info summary {
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #4ecdc4;
+    margin-bottom: 0.5rem;
+}
+
+#debug-info summary:hover {
+    color: #ffffff;
+}
+
+#debug-content {
+    margin-top: 1rem;
+    font-size: 0.8rem;
+}
+
+#debug-content p {
+    margin: 0.5rem 0;
+    color: #cccccc;
+}
+
+#debug-content strong {
+    color: #ffffff;
+}
+
+#debug-content span {
+    font-family: monospace;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 2px 6px;
+    border-radius: 3px;
 } 
