@@ -3,67 +3,420 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Babylon.js VR 리듬 게임</title>
+    <title>VR 리듬 게임 - Babylon.js</title>
     <style>
       body {
         margin: 0;
         padding: 0;
         overflow: hidden;
         font-family: Arial, sans-serif;
+        background: #000;
       }
       canvas {
         width: 100%;
-        height: 100%;
+        height: 100vh;
         display: block;
       }
       #info {
         position: absolute;
-        top: 10px;
-        left: 10px;
+        top: 20px;
+        left: 20px;
         color: white;
-        background: rgba(0, 0, 0, 0.7);
-        padding: 10px;
-        border-radius: 5px;
         z-index: 100;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 20px;
+        border-radius: 8px;
+        max-width: 400px;
+      }
+      #info h1 {
+        margin: 0 0 10px 0;
+        color: #4caf50;
+      }
+      #info p {
+        margin: 10px 0;
+        line-height: 1.5;
+      }
+      #enterVR {
+        background: #4caf50;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        margin: 10px 5px 10px 0;
+      }
+      #enterVR:hover {
+        background: #45a049;
+      }
+      #backButton {
+        background: #2196f3;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        margin: 10px 5px 10px 0;
+      }
+      #backButton:hover {
+        background: #1976d2;
+      }
+      .instructions {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 15px;
+        border-radius: 6px;
+        margin: 15px 0;
+      }
+      .instructions h3 {
+        margin: 0 0 10px 0;
+        color: #ffd700;
+      }
+      .instructions ul {
+        margin: 10px 0;
+        padding-left: 20px;
+      }
+      .instructions li {
+        margin: 5px 0;
+      }
+      #audioWarning {
+        background: rgba(255, 165, 0, 0.2);
+        border: 1px solid #ffa500;
+        padding: 10px;
+        border-radius: 6px;
+        margin: 10px 0;
+        color: #ffa500;
       }
     </style>
   </head>
   <body>
     <div id="info">
-      <h3>VR 리듬 게임</h3>
-      <p>VR 모드에서 떨어지는 구체를 드럼으로 받아 리듬을 만드세요!</p>
-      <p>사운드를 활성화하고 VR 헤드셋을 착용하세요.</p>
+      <h1>🎵 VR 리듬 게임</h1>
+      <p>Babylon.js를 사용한 물리 기반 VR 드럼 게임입니다.</p>
+
+      <div id="audioWarning">
+        ⚠️ VR 모드 진입 시 반드시 사운드를 활성화하세요!
+      </div>
+
+      <div class="instructions">
+        <h3>🎮 게임 방법:</h3>
+        <ul>
+          <li>VR 모드에서 3개의 구슬이 위에서 떨어집니다</li>
+          <li>앞쪽의 드럼 샘플들을 잡아서 위치시키세요</li>
+          <li>구슬이 드럼에 떨어지면 리듬이 만들어집니다</li>
+          <li>손 추적과 컨트롤러 모두 지원됩니다</li>
+        </ul>
+      </div>
+
+      <div class="instructions">
+        <h3>🕹️ 조작법:</h3>
+        <ul>
+          <li><strong>컨트롤러:</strong> 트리거 또는 스퀴즈 버튼으로 잡기</li>
+          <li><strong>손 추적:</strong> 선택 제스처로 잡기</li>
+          <li><strong>드럼 종류:</strong> 박스, 구, 실린더 3가지</li>
+        </ul>
+      </div>
+
+      <button id="enterVR">VR 모드 시작</button>
+      <button id="backButton" onclick="window.location.href='index.html'">
+        메인으로 돌아가기
+      </button>
     </div>
+
+    <canvas id="canvas"></canvas>
 
     <!-- Babylon.js 라이브러리 -->
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
-    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
     <script src="https://cdn.babylonjs.com/cannon.js"></script>
 
     <script>
       // Canvas 생성
-      const canvas = document.createElement("canvas");
-      canvas.id = "canvas";
-      document.body.appendChild(canvas);
-
-      // Babylon.js 엔진 초기화
+      const canvas = document.getElementById("canvas");
       const engine = new BABYLON.Engine(canvas, true);
 
-      // test.js의 createScene 함수가 여기에 들어갑니다
-      // (전체 test.js 내용 삽입)
-    </script>
-    <script src="test.js"></script>
+      // VR 리듬 게임 생성 함수 (test.js 기반)
+      var createScene = async function () {
+        let timeout;
+        const mats = [];
+        const positions = [];
 
-    <script>
-      // 씬 생성 및 실행
+        // 기본 씬 생성
+        var scene = new BABYLON.Scene(engine);
+
+        // 카메라 생성
+        var camera = new BABYLON.FreeCamera(
+          "camera1",
+          new BABYLON.Vector3(0, 2, 0),
+          scene
+        );
+        camera.setTarget(new BABYLON.Vector3(0, 0, 1));
+        camera.attachControl(canvas, true);
+        scene.activeCamera = camera;
+
+        // 조명 설정
+        var light = new BABYLON.DirectionalLight(
+          "light",
+          new BABYLON.Vector3(0, -0.5, 1.0),
+          scene
+        );
+        light.position = new BABYLON.Vector3(0, 5, -6);
+
+        // 물리 엔진 활성화
+        scene.enablePhysics(
+          undefined,
+          new BABYLON.CannonJSPlugin(undefined, 80)
+        );
+
+        // 그림자 생성기
+        const shadowGenerator = new BABYLON.ShadowGenerator(1024, light);
+        shadowGenerator.useBlurExponentialShadowMap = true;
+        shadowGenerator.blurKernel = 32;
+
+        // 하이라이트 레이어
+        const hl = new BABYLON.HighlightLayer("hl1", scene);
+
+        // 기본 환경 생성
+        const environment = scene.createDefaultEnvironment();
+
+        // 3가지 재질 생성
+        const mat1 = new BABYLON.StandardMaterial("mat1", scene);
+        mat1.diffuseColor = BABYLON.Color3.Blue();
+        const mat2 = new BABYLON.StandardMaterial("mat2", scene);
+        mat2.diffuseColor = BABYLON.Color3.Yellow();
+        const mat3 = new BABYLON.StandardMaterial("mat3", scene);
+        mat3.diffuseColor = BABYLON.Color3.Red();
+        mats.push(mat1, mat2, mat3);
+
+        // 구슬이 떨어질 위치들
+        positions.push(
+          new BABYLON.Vector3(-0.5, 2, 0),
+          new BABYLON.Vector3(0, 2, 0.5),
+          new BABYLON.Vector3(0.5, 2, 0)
+        );
+
+        // XR 경험 생성
+        const xrHelper = await scene.createDefaultXRExperienceAsync({
+          floorMeshes: [environment.ground],
+          disableTeleportation: true,
+        });
+
+        xrHelper.pointerSelection.displayLaserPointer = false;
+        xrHelper.pointerSelection.displaySelectionMesh = false;
+
+        // 핸드 트래킹 지원
+        const featureManager = xrHelper.baseExperience.featuresManager;
+        featureManager.enableFeature(
+          BABYLON.WebXRFeatureName.HAND_TRACKING,
+          "latest",
+          {
+            xrInput: xrHelper.input,
+          },
+          true,
+          false
+        );
+
+        // 떨어진 구슬 정리
+        scene.onBeforeRenderObservable.add(() => {
+          scene.getMeshesById("drop").forEach((drop) => {
+            if (drop.position.y < -0.5) {
+              drop.dispose();
+            }
+          });
+        });
+
+        // 구슬 생성 함수
+        const createDrop = (idx) => {
+          const s = BABYLON.SphereBuilder.CreateSphere("drop", {
+            diameter: 0.08,
+          });
+          s.material = mats[idx];
+          s.physicsImpostor = new BABYLON.PhysicsImpostor(
+            s,
+            BABYLON.PhysicsImpostor.SphereImpostor,
+            {
+              mass: 0.5,
+              friction: 0.01,
+              restitution: 0.6,
+            }
+          );
+          s.position.copyFrom(positions[idx]);
+
+          // 드럼과의 충돌 감지
+          s.physicsImpostor.registerOnPhysicsCollide(
+            scene.getMeshesById("drum").map((m) => m.physicsImpostor),
+            (col, against) => {
+              hl.addMesh(against.object, s.material.diffuseColor);
+              setTimeout(() => {
+                hl.removeMesh(against.object);
+              }, 200);
+            }
+          );
+          shadowGenerator.addShadowCaster(s);
+        };
+
+        // 연속으로 구슬 생성
+        const createDrops = () => {
+          [0, 1, 2].forEach(createDrop);
+          timeout = setTimeout(createDrops, 2000); // 30 BPM
+        };
+
+        // 드럼 복제 함수
+        const makeDrumsGreatAgain = (cloneFrom) => {
+          const drumMesh = cloneFrom.clone("drum");
+          shadowGenerator.addShadowCaster(drumMesh);
+          drumMesh.id = "drum";
+          drumMesh.physicsImpostor = new BABYLON.PhysicsImpostor(
+            drumMesh,
+            cloneFrom.metadata.impostorType,
+            { mass: 0, friction: 0.01, restitution: 0.6 }
+          );
+          return drumMesh;
+        };
+
+        // VR 세션 시작 시 구슬 떨어뜨리기 시작
+        xrHelper.baseExperience.sessionManager.onXRSessionInit.add(() => {
+          createDrops();
+        });
+
+        // VR 세션 종료 시 타이머 정리
+        xrHelper.baseExperience.sessionManager.onXRSessionEnded.add(() => {
+          clearTimeout(timeout);
+        });
+
+        // 3가지 드럼 샘플 생성
+        const drum1 = BABYLON.BoxBuilder.CreateBox("drumSample", {
+          depth: 0.1,
+          height: 0.2,
+          width: 0.2,
+        });
+        drum1.position.set(0, 1, 0.3);
+        drum1.metadata = { impostorType: BABYLON.PhysicsImpostor.BoxImpostor };
+
+        const drum2 = BABYLON.SphereBuilder.CreateSphere("drumSample", {
+          diameter: 0.2,
+        });
+        drum2.position.set(-0.3, 1, 0.3);
+        drum2.metadata = {
+          impostorType: BABYLON.PhysicsImpostor.SphereImpostor,
+        };
+
+        const drum3 = BABYLON.MeshBuilder.CreateCylinder("drumSample", {
+          diameter: 0.2,
+          height: 0.1,
+        });
+        drum3.position.set(0.3, 1, 0.3);
+        drum3.metadata = {
+          impostorType: BABYLON.PhysicsImpostor.CylinderImpostor,
+        };
+
+        // 잡기 기능
+        const checkGrab = (grab, grabbingMesh) => {
+          if (grab) {
+            // 드럼 샘플과의 교차 확인
+            [drum1, drum2, drum3].forEach((sample) => {
+              if (sample.intersectsMesh(grabbingMesh)) {
+                makeDrumsGreatAgain(sample);
+              }
+            });
+
+            // 기존 드럼들과의 교차 확인
+            const drums = scene.getMeshesById("drum");
+            drums.forEach((d) => {
+              if (d.intersectsMesh(grabbingMesh)) {
+                hl.addMesh(d, BABYLON.Color3.Green());
+                d.setParent(grabbingMesh);
+              }
+            });
+          } else {
+            // 잡기 해제
+            const drums = scene.getMeshesById("drum");
+            drums.forEach((d) => {
+              if (d.parent === grabbingMesh) {
+                hl.removeMesh(d);
+                d.setParent(null);
+              }
+            });
+          }
+        };
+
+        // 컨트롤러 스퀴즈 버튼 지원
+        xrHelper.input.onControllerAddedObservable.add((controller) => {
+          controller.onMeshLoadedObservable.addOnce((rootMesh) => {
+            shadowGenerator.addShadowCaster(rootMesh, true);
+          });
+
+          controller.onMotionControllerInitObservable.add(() => {
+            const squeeze =
+              controller.motionController.getComponentOfType("squeeze");
+            [squeeze].forEach((component) => {
+              if (!component) return;
+
+              component.onButtonStateChangedObservable.add(() => {
+                if (component.changes.pressed) {
+                  checkGrab(component.pressed, controller.pointer);
+                }
+              });
+            });
+          });
+        });
+
+        // 포인터 지원 (메인 버튼과 핸드 트래킹)
+        scene.onPointerObservable.add((data) => {
+          const controller =
+            xrHelper.pointerSelection.getXRControllerByPointerId(
+              data.event.pointerId
+            );
+          if (controller) {
+            if (data.type === BABYLON.PointerEventTypes.POINTERDOWN) {
+              checkGrab(true, controller.pointer);
+            } else if (data.type === BABYLON.PointerEventTypes.POINTERUP) {
+              checkGrab(false, controller.pointer);
+            }
+          }
+        }, BABYLON.PointerEventTypes.POINTERDOWN | BABYLON.PointerEventTypes.POINTERUP);
+
+        // 씬 정리 시 타이머 해제
+        scene.onDisposeObservable.add(() => {
+          if (timeout) {
+            clearTimeout(timeout);
+          }
+        });
+
+        return scene;
+      };
+
+      // 씬 생성 및 렌더링 시작
       createScene().then((scene) => {
         engine.runRenderLoop(() => {
           scene.render();
         });
+      });
 
-        window.addEventListener("resize", () => {
-          engine.resize();
-        });
+      // 창 크기 변경 시 엔진 리사이즈
+      window.addEventListener("resize", () => {
+        engine.resize();
+      });
+
+      // VR 버튼 이벤트
+      document.getElementById("enterVR").addEventListener("click", async () => {
+        try {
+          const scene = engine.scenes[0];
+          if (scene) {
+            const xrHelper = scene.getEngine().scenes[0].metadata?.xrHelper;
+            if (xrHelper) {
+              await xrHelper.baseExperience.enterXRAsync(
+                "immersive-vr",
+                "local-floor"
+              );
+            }
+          }
+        } catch (error) {
+          console.error("VR 모드 진입 실패:", error);
+          alert(
+            "VR 모드 진입에 실패했습니다. VR 헤드셋이 연결되어 있는지 확인하세요."
+          );
+        }
       });
     </script>
   </body>

@@ -229,5 +229,44 @@ body {
 }
 
 .log-info {
-    color: #2196f3;
+    color: #17a2b8;
+}
+
+/* 게임 설명 스타일 */
+.game-description {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    text-align: left;
+}
+
+.game-description h3 {
+    color: #4CAF50;
+    margin: 0 0 10px 0;
+    font-size: 1.3rem;
+}
+
+.game-description ul {
+    margin: 10px 0;
+    padding-left: 20px;
+    list-style: none;
+}
+
+.game-description li {
+    margin: 8px 0;
+    line-height: 1.4;
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.game-description li:before {
+    content: "🎯";
+    position: absolute;
+    left: 0;
+}
+
+.game-description strong {
+    color: #FFD700;
 } 
